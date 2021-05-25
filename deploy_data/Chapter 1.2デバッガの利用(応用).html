@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chapter 1.1デバッガの利用(応用).md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="chapter-1-c%E3%81%AB%E3%82%88%E3%82%8B%E5%A4%A7%E8%A6%8F%E6%A8%A1%E9%96%8B%E7%99%BA">Chapter 1 C++による大規模開発</h1>
+<h2 id="12-%E3%83%87%E3%83%90%E3%83%83%E3%82%AC%E3%81%AE%E5%88%A9%E7%94%A8%E5%BF%9C%E7%94%A8">1.2 デバッガの利用(応用)</h2>
+<p>このチャプターでは、デバッガの利用をさらに見ていきましょう。
+</br>
+この節では二つのプログラムを使用します。次のURLからプログラムをダウンロードしておいてください。</br></p>
+</br>
+<hr>
+<h3 id="121-%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%97%E5%B1%A5%E6%AD%B4">1.2.1 呼び出し履歴</h3>
+<p>関数の呼び出し履歴を確認することができます。</br>
+呼び出し履歴は、メニューの「デバッグ/ウィンドウ/呼び出し履歴」を選択すると開くことができます(図1.13)。</br>
+</br></p>
+<p><strong>図1.13</strong></br>
+<img src="fig/1.13.png"></img></br>
+呼び出し履歴を開くと画面の下の方に、呼び出し履歴のウィンドウが追加されます(図1.14)。</br>
+</br></p>
+<p><strong>図1.13</strong></br>
+<img src="fig/1.13.png"></img></br></p>
+<p>呼び出し履歴はブレイクポイントでプログラムを停止しているときに利用することができます。</br>
+呼び出し履歴は、関数がどこから呼ばれているのかをコールされてきたのかを確認することができます。</br>
+図1.15はDispComNoTe()のブレイクポイントでプログラムが停止しています。</br>
+</br></p>
+<p><strong>図1.15</strong></br>
+<img src="fig/1.15.png"></img></br></p>
+<p>このとき、呼び出し履歴を確認すると、DispComNoTe()はmain()から呼ばれていることが分かります。</br>
+呼び出し元のプログラムをは、呼び出し元の関数名をダブルクリックすることで確認することができます。</br>
+(注意：呼び出し元に戻ったときに、１行ずれているので注意が必要です。)</br></p>
+<hr>
+<h3 id="122-%E3%83%8F%E3%83%B3%E3%82%BA%E3%82%AA%E3%83%B3%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%97%E5%B1%A5%E6%AD%B4%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">1.2.2 【ハンズオン】呼び出し履歴を使ってみる。</h3>
+<p>Sample_01を利用して呼び出し履歴を使ってみましょう。</p>
+<h4 id="step-1-dispplayernote%E3%81%AB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%82%92%E8%A8%AD%E7%BD%AE%E3%81%99%E3%82%8B">step-1 DispPlayerNoTe()にブレイクポイントを設置する。</h4>
+<p>DispPlayerNoTe()の10行目にブレイクポイントを設置してください。</p>
+<h4 id="step-2-%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%81%A7%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%82%92%E5%81%9C%E6%AD%A2%E3%81%95%E3%81%9B%E3%82%8B">step-2 ブレイクポイントでプログラムを停止させる。</h4>
+<p>では、じゃんけんゲームをデバッガありで実行して、プレイして先ほどのブレイクポイントでプログラムを停止させてください。</br></p>
+<h4 id="step-3-%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%97%E5%B1%A5%E6%AD%B4%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B">step-3 呼び出し履歴を確認する</h4>
+<p>プログラムを停止させることができたら、呼び出し履歴をつかって、DispPlayerNoTe()が何行目から呼ばれているか確認してください。</br></p>
+<hr>
+<h3 id="123-%E5%87%BA%E5%8A%9B">1.2.3 出力</h3>
+<p>プログラムからのコンソール出力を確認することができます。</br>
+出力は、メニューの「デバッグ/ウィンドウ/出力」を選択することで開くことができます(図1.16)。</br></p>
+</br>
+<p><strong>図1.16</strong></br>
+<img src="fig/1.16.png"></img></br>
+開くと画面の下の方に、出力ウィンドウが追加されます(図1.17)。</br></br></p>
+<p><strong>図1.17</strong></br>
+<img src="fig/1.17.png"></img></br>
+出力ウィンドウには、プログラムから重要なランタイムのエラーメッセージが出力されている場合があります。</br>
+特にDirectXなどでのプログラミングにおいて、動作がおかしいなどの原因不明のエラーが起きた時は、真っ先に出力ウィンドウを調べましょう。</br>
+DirectXからエラーメッセージが出力されている場合があります。</br>
+君たちのプログラムで出力ウィンドウに値を出力することもできます。</br>
+出力ウィンドウへの出力はOutputDebugStringA()を利用します。</br></p>
+<pre class="hljs"><code><div>OutputDebugStringA(<span class="hljs-string">"Hello world\n"</span>);
+</div></code></pre>
+<p>このような機能は、ゲーム実行中にプレイヤーの体力などを確認したいときに利用します。</p>
+<h3 id="123-%E3%83%8F%E3%83%B3%E3%82%BA%E3%82%AA%E3%83%B3%E5%87%BA%E5%8A%9B%E3%82%A6%E3%82%A3%E3%83%B3%E3%83%89%E3%82%A6%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">1.2.3 【ハンズオン】出力ウィンドウを使ってみる。</h3>
+<p>Sample＿01を利用して、出力ウィンドウに値を出力するコードを追加しましょう。</br>
+main.cppの87行目にリスト1.1のプログラムを入力してください。</br></p>
+<pre class="hljs"><code><div><span class="hljs-comment">//【ハンズオン】出力ウィンドウを使ってみる。</span>
+<span class="hljs-keyword">char</span> text[<span class="hljs-number">256</span>];
+<span class="hljs-built_in">sprintf</span>(text, <span class="hljs-string">"player = %d, com = %d\n"</span>, player, com);
+OutputDebugStringA(text);
+</div></code></pre>
+<p>入力出来たら実行してください。</br>
+出力ウィンドウに変数playerとcomの数値が出力されるようになります。</p>
+<hr>
+<h3 id="123-%E3%83%87%E3%83%BC%E3%82%BF%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88">1.2.3 データブレイクポイント</h3>
+<p>最後に超強力なデバッガの機能、「データブレイクポイント」を紹介します。</br>
+この機能を使うと、変数の値が変更されたときにプログラムを停止させることができます。</br>
+変数の値が不正な値に書き換えらえて意図しない不具合が起きることがあります。</br>
+このような不具合の原因を調べることは、大規模なプロジェクトになってくると、非常に難しいこととなってきます。</br>
+データブレイクポイントは、このような不正な値の書き換えのデバッグ作業を強力にサポートしてくれます。</br>
+データブレイクポイントを設置するためには、監視したいデータのアドレスが必要になってきます。</br>
+そのため、ウォッチ機能を使って、対象の変数のアドレスを調べる必要があります。</br>
+この設置の仕方を文章で伝えるのは、少々手間ですので、下記の動画を参照してみてください。</br></p>
+<p><a href="https://www.youtube.com/watch?v=VBFXB39r-pU">データブレイクポイントの使い方</a></p>
+<hr>
+<h3 id="123-%E3%83%8F%E3%83%B3%E3%82%BA%E3%82%AA%E3%83%B3%E3%83%87%E3%83%BC%E3%82%BF%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">1.2.3 【ハンズオン】データブレイクポイントを使ってみる。</h3>
+<h4 id="step-1-maincpp%E3%81%AE58%E8%A1%8C%E7%9B%AE%E3%81%AB%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%82%92%E8%A8%AD%E7%BD%AE">step-1 main.cppの58行目にブレイクポイントを設置。</h4>
+<h4 id="step-2-%E3%83%87%E3%83%90%E3%83%83%E3%82%AC%E3%81%82%E3%82%8A%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%82%9258%E8%A1%8C%E7%9B%AE%E3%81%A7%E6%AD%A2%E3%82%81%E3%82%8B">step-2 デバッガありで実行して、プログラムを58行目で止める。</h4>
+<h4 id="step-3-%E5%A4%89%E6%95%B0player%E3%81%AE%E3%82%A2%E3%83%89%E3%83%AC%E3%82%B9%E3%82%92%E3%82%B3%E3%83%94%E3%83%BC%E3%81%99%E3%82%8B">step-3 変数playerのアドレスをコピーする</h4>
+<p>ウォッチウィンドウに「&amp;player」と入力して、アドレスをコピーしてください(図1.18)。</br></br></p>
+<p><strong>図1.18</strong></br>
+<img src="fig/1.18.png"></img></br></p>
+<h4 id="step-4-%E3%83%87%E3%83%BC%E3%82%BF%E3%83%96%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%82%92%E8%A8%AD%E7%BD%AE%E3%81%99%E3%82%8B">step-4 データブレイクポイントを設置する。</h4>
+<p>メニューの「デバッグ/ブレイクポイントの作成/データブレイクポイント」を選択して、データブレイクポイントの作成画面を開く。</br>
+開けたら、図1.19のように変数playerのアドレスをコピーして、データブレイクポイントを作成する。</br></br></p>
+<h4 id="step-5-%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%82%92%E5%86%8D%E9%96%8B%E3%81%99%E3%82%8B">step-5 プログラムを再開する。</h4>
+<p>プログラムを再開して、変数playerの値が変わったタイミングでプログラムが停止することを確認してください。</br></p>
+<h3 id="124-%E8%A9%95%E4%BE%A1%E3%83%86%E3%82%B9%E3%83%88-2">1.2.4 評価テスト-2</h3>
+<p>次の評価テストを行いなさい。</br>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLScY7MEYxBRd3KWzv0fLrFiL_myaulE-EVPfCDoR2YNqQYVzUQ/viewform?usp=sf_link">評価テストへジャンプ</a>
+</br></p>
+
+</body>
+</html>
