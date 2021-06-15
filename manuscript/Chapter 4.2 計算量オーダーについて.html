@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chapter 4.2 計算量オーダーについて.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="chapter-4-c%E6%A8%99%E6%BA%96%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%81%AE%E5%88%A9%E7%94%A8%E4%B8%8A%E7%B4%9A">Chapter-4 C++標準テンプレートライブラリの利用(上級)～</h1>
+<h2 id="42-%E8%A8%88%E7%AE%97%E9%87%8F%E3%82%AA%E3%83%BC%E3%83%80%E3%83%BC%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">4.2 計算量オーダーについて</h2>
+<p>さて、ここから可変長配列、双方向リスト、マップなどの特性をアルゴリズムの詳細な実装を交えて解説をしていきたいのですが、その前にアルゴリズムの計算量オーダーというものについて勉強しておきましょう。計算量オーダーとは、そのアルゴリズムを実行したときの処理時間を図るための物差しです。可変長配列、双方向リスト、マップなどの古典的なアルゴリズムは、ネットを調べると計算量オーダーを見つけることができます。また、これら以外の多種多様なアルゴリズムも計算量オーダーに関する記述を見つけることができます。適切なアルゴリズムを選択するためには、この記述の意味が分かる必要があります。また、この記述の意味が分かると、自身が作成している処理の計算量も分かるようになってきます。これが分かるようになってくると、「あ・・・俺・・・今、ヤバいコード書いてる・・・。このコードでプログラムを実行すると、いつまでたっても処理終わらなくなるかも。。。」ということが考えられるようになってきます。</br>
+計算量オーダーは次のような表記がされます。</p>
+<ol>
+<li>O(1)</li>
+<li>O(N)</li>
+<li>O(N^2)</li>
+<li>O(logN)</li>
+<li>O(NlogN)</li>
+</ol>
+<p>例えば、可変長配列、std::vectorの[]演算子の計算量オーダーはO(1)です。std::map::find()関数の計算量のオーダーはO(logN)です。std::find()関数を利用して、std::vectorやstd::listに格納されている要素を検索する計算量はO(N)です。
+さて、ここで、質問です。10000万を超える膨大なデータから要素を検索する場合、std::mapとstd::vectorのどちらにデータを記憶したほうが良いでしょうか？
+この場合、std::mapを選択することが最も良いです。理由は、std::find()関数を利用して、std::vectorの要素を検索する時間がO(N)なのに対して、std::map::find()関数の検索時間はO(logN)だからです。
+計算量オーダーの読み方が分かっている人はこれがすぐに分かるようになります。では、計算量オーダーについて説明していきます。</p>
+<h2 id="421-o1">4.2.1 O(1)</h2>
+<p>アルゴリズムで扱うデータ数が多かろうが、少なかろうが、処理時間は一定であることを表しています。std::vectorの[]演算子の計算量オーダーがこれに該当します。
+多くの場合で、O(1)のアルゴリズムは最速である場合が多いです。</p>
+<h2 id="422-on">4.2.2 O(N)</h2>
+<p>O(N)という表記はアルゴリズムが扱うデータ数(N)の量に応じて、比例して計算時間が増加することを表しています。この手のアルゴリズムは少数のデータを扱うときには十分な速度が期待できますが、データ数が多くなってくると注意が必要になってきます。
+std::find()関数の検索時間はO(N)です。</p>
+<h2 id="423-on2">4.2.3 O(N^2)</h2>
+<p>O(N^2)という表記はアルゴリズムが扱うデータ数(N)の量応じて、N^2、つまり指数関数的に計算量が増加していくことを表しています。このオーダーのアルゴリズムがもっとも注意が必要です。バブルソートの計算量はO(N^2)です。大量のデータを扱うときに、このアルゴリズムを選択すると最悪の結果となるでしょう。</p>
+<h2 id="424-ologn">4.2.4 O(logN)</h2>
+<p>計算量がO(logN)のアルゴリズムは、扱うデータ数(N)に応じて、2を底とする対数の時間の計算量となります。この計算量の表記を理解するのに、数学の対数の知識はなくても構いません。この計算量のアルゴリズムは大量のデータを扱うときに、最もすぐれたパフォーマンスを出す可能性があるアルゴリズムです。もし、計算量がO(N)やO(N^2)のアルゴリズムの変更、最適化を行う場合は、まず計算量がO(logN)になることを目指すべきです。
+例えば、O(N)のアルゴリズムで100万個のデータを扱うときに、100時間かかっているときに、そのアルゴリズムをO(logN)になるように改良すると、処理時間は7.2秒になります。
+なぜこのように高速になるのかは、std::map::find()の実装の詳細を見るときに説明します。</p>
+<h2 id="425-onlogn">4.2.5 O(NlogN)</h2>
+<p>計算量がO(NlogN)のアルゴリズムは、扱うデータ数(N)に応じて、2を底とする対数時間に比例して増加していく計算量となります。こちらも大量のデータを扱うときに、優れたパフォーマンスを出す可能性があるアルゴリズムです。有名どころではクイックソートなどがこの計算量となります。
+例えば100個のデータをバブルソートにかけると10000時間かかるとき、クイックソートを利用すると600時間に短縮することができます。</p>
+<h2 id="%E8%A9%95%E4%BE%A1%E3%83%86%E3%82%B9%E3%83%88">評価テスト</h2>
+<p>次の評価テストを行いなさい。</br>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSeELufwJIQWRq7Bcku6P_CXKk_HHxXhCCr9K93eB3asFAmdgg/viewform?usp=sf_link">評価テストへジャンプ</a>
+</br></p>
+
+</body>
+</html>
