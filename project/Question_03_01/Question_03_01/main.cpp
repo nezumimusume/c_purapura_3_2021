@@ -17,7 +17,29 @@ int main()
     // 課題-1 
     // hogeから40、50、60の値を検索して、見つかったら
     // hogeから除去するプログラムを実装しなさい。
-    
+    std::vector<int>::iterator it;
+
+    // 40を削除
+    it = std::find(
+        hoge.begin(),
+        hoge.end(),
+        40
+    );
+    if (it != hoge.end()) {
+        hoge.erase( it );
+    }
+
+    // 50を削除
+    it = std::find(
+        hoge.begin(),
+        hoge.end(),
+        50
+    );
+    if (it != hoge.end()) {
+        hoge.erase(it);
+    }
+    // 60を削除
+
 
 
 

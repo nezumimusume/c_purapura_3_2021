@@ -18,7 +18,14 @@ int main()
     // 課題-1 
     // hogeから5の値を全て除去するプログラムを実装しなさい。
 
-
+    for (int i = 0; i < hoge.size(); i++) {
+        std::vector<int>::iterator it = std::find(
+            hoge.begin(),
+            hoge.end(),
+            5
+        );
+        hoge.erase(it);
+    }
 
 
 
