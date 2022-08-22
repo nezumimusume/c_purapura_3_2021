@@ -4,26 +4,25 @@
 #include <iostream>
 
 class ModelRender {
+    int* m_vertexBuffer;
 public:
     ModelRender()
     {
+        m_vertexBuffer = new int;
     }
     ~ModelRender()
     {
+        delete m_vertexBuffer;
     }
 };
 class Player {
-    ModelRender* m_modelRender = nullptr;
+    ModelRender m_modelRender;
 public:
     Player()
     {
-        // ModelRenderのインスタンスを作成。
-        m_modelRender = new ModelRender;
     }
     ~Player()
     {
-        // ModelRenderのインスタンスを破棄。
-        delete m_modelRender;
     }
 };
 int main()
