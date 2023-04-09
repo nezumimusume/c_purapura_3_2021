@@ -67,6 +67,10 @@ public:
 int main()
 {
     GameObjectManager gameObjectManager;
+    // Playerのコンストラクタが呼ばれる。
+    //   ⇒ IGameObjectのコンストラクタが呼ばれる。
+    //      ⇒ InitBoundingBox()が呼ばれる。 
+    //          
     gameObjectManager.AddGameObject(new Player);
     while (true) {
         gameObjectManager.Execute();

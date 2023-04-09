@@ -1,9 +1,9 @@
 # Chapter 2 C++による大規模開発 ～C++標準テンプレートライブラリの利用(基本)～ 
 
-この節では次のプログラムを使用します。次のURLからプログラムをダウンロードしておいてください。</br>
-**[Sample_02_01.zip](https://drive.google.com/file/d/1AXaP7mYkUd_bEqnuq2Keje1DI2JFrUnX/view?usp=sharing)**</br>
 
 ## 2.2 可変長配列「vector」
+この節では次のプログラムを使用します。次のURLからプログラムをダウンロードしておいてください。</br>
+**[Sample_02_01.zip](https://drive.google.com/file/d/1AXaP7mYkUd_bEqnuq2Keje1DI2JFrUnX/view?usp=sharing)**</br>
 vectorは要素数を動的に変化させることができる配列です。「動的」というのはプログラム実行中ということです。</br>
 これまで、皆さんが勉強した配列は、固定長配列です。固定長配列はプログラムの実行中にサイズを変えることはできません。</br>
 次のプログラムを読んでみてください。</br>

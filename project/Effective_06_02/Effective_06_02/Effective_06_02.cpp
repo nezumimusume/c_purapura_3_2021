@@ -6,6 +6,10 @@
 class ModelRender {
     int* m_vertexBuffer;
 public:
+    ModelRender() = default;
+    ModelRender(ModelRender& modelRender) = delete;
+    ModelRender& operator=(ModelRender& modelRender) = delete;
+
     ModelRender()
     {
         m_vertexBuffer = new int;
@@ -24,14 +28,18 @@ public:
     ~Player()
     {
     }
+    ModelRender GetModelRender()
+    {
+        return m_modelRender;
+    }
+    
 };
+void Func(ModelRender render)
+{
+}
 int main()
 {
     Player pl0; 
-#if 0
-    Player pl1(pl0);
-#else
-    Player pl1;
-    pl1 = pl0;
-#endif
+    ModelRender render = pl0.GetModelRender();
+    Func(render);
 }

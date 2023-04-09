@@ -7,6 +7,14 @@
 
 class IGameObject {
 public:
+    IGameObject()
+    {
+        std::cout << "IGameObjectのコンストラクタ\n";
+    }
+    ~IGameObject()
+    {
+        std::cout << "IGameObjectのデストラクタ\n";
+    }
     virtual void Update()
     {
     }
@@ -21,11 +29,60 @@ public:
             go->Update();
         }
     }
+    template<class T>
+    T* NewGameObject()
+    {
+        T* newObj = new T;
+        m_gameObjects.push_back(newObj);
+        return newObj;
+    }
+    void DeleteAll()
+    {
+        for (auto go : m_gameObjects) {
+            delete go;
+        }
+    }
+};
+
+class ModelRender {};
+
+class Player : public IGameObject {
+private:
+    ModelRender* m_modelRender;
+public:
+    Player()
+    {
+        std::cout << "Player::コンストラクタ\n";
+        m_modelRender = new ModelRender();
+    }
+    ~Player()
+    {
+        std::cout << "Player::デストラクタ\n";
+        delete m_modelRender;
+    }
+    void Update()
+    {
+        std::cout << "Player::Update()\n";
+    }
+};
+class Enemy : public IGameObject {
+public:
+    void Update()
+    {
+        std::cout << "Enemy::Update()\n";
+    }
 };
 int main()
 {
     GameObjectManager gameObjectManager;
+    gameObjectManager.NewGameObject<Player>();
+
     while (true) {
+        if (GetAsyncKeyState('A')) {
+            gameObjectManager.DeleteAll();
+            break;
+        }
+        gameObjectManager.Execute();
         Sleep(500);
     }
 }
