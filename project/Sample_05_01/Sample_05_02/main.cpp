@@ -1,24 +1,19 @@
-﻿// ConsoleApplication1.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
+﻿// Sample_04_04.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
 //
 
 #include <iostream>
-#include <vector>
+#include <Windows.h>
 #include <list>
+
+// step-1 ゲームオブジェクトのインターフェースクラスを実装する。
+
+// step-2 GameObjectManagerを実装する
+
+// step-3 IGameObjectを継承してプレイヤークラスとエネミークラスを定義する。
 
 int main()
 {
-    std::list<int> hoge;
-    hoge.push_back(10);
-    hoge.push_back(20);
-    hoge.push_back(30);
-    hoge.push_back(40);
-    auto it = hoge.begin();
-    hoge.push_back(50);
-    hoge.push_back(60);
-    hoge.push_back(70);
-    hoge.push_back(80);
-    
-    std::cout << *it;
+    // step-4 GameObjectManagerを使ってみる。
 }
 
 // プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー
