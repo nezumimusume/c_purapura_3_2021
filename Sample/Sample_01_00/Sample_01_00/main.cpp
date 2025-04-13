@@ -1,9 +1,11 @@
-﻿#include <iostream>
+#include <iostream>
 #include <random>
 #include "Stopwatch.h"
 
 int main()
 {
+    SetConsoleOutputCP(CP_UTF8);
+
     std::random_device seed_gen;
     std::mt19937 random(seed_gen());
     // データ数は1000万
