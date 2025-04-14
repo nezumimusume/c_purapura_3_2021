@@ -141,7 +141,7 @@
 Sample_00_00/Sample_00_00.slnを立ち上げてください。
 
 ### step-1 ブレイクポイントの設置
-main.cppの69行目にブレイクポイントを設置してください(図0.5)。</br></br>
+main.cppの71行目にブレイクポイントを設置してください(図0.5)。</br></br>
 **図0.5**</br>
 <img src="manuscript/fig/1.5.png" width="600"></img></br>
 
