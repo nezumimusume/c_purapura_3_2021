@@ -158,10 +158,13 @@
       - [step-8 もう一度for文を使って、hogeの要素の値を表示する。](#step-8-もう一度for文を使ってhogeの要素の値を表示する-2)
       - [step-9 指定した要素を削除する](#step-9-指定した要素を削除する-1)
 - [Chapter 3 C++11以降のモダンな新機能](#chapter-3-c11以降のモダンな新機能)
-  - [3.1 スマートポインタ](#31-スマートポインタ)
-  - [3.2 型推論](#32-型推論)
-  - [3.3 範囲for文](#33-範囲for文)
-  - [3.4 ラムダ式](#34-ラムダ式)
+  - [3.1 範囲for文](#31-範囲for文)
+  - [3.2 スマートポインタ](#32-スマートポインタ)
+  - [3.3 ラムダ式](#33-ラムダ式)
+  - [3.4 型推論](#34-型推論)
+    - [3.4.1 autoキーワード](#341-autoキーワード)
+    - [3.4.2 参照とautoの注意点](#342-参照とautoの注意点)
+    - [3.4.3 【ハンズオン】型推論を使ってみる](#343-ハンズオン型推論を使ってみる)
   - [3.5 nullptr](#35-nullptr)
   - [3.6 右辺値参照とムーブセマンティクス](#36-右辺値参照とムーブセマンティクス)
 - [Chapter 4 カプセル化](#chapter-4-カプセル化)
@@ -1444,6 +1447,7 @@ std::list<int*> ptrs;
 ptrs.push_back(new int(10));
 ptrs.push_back(new int(20));
 
+// メモリリークを防ぐために解放する
 for (int* p : ptrs) {
     delete p;
 }
@@ -1866,7 +1870,7 @@ if (it != scores.end()) {
 ```cpp
 std::cout << "要素数: " << scores.size() << std::endl;  // 要素数: 1
 ```
-#### 要素へのアクセス：at, []
+#### 要素へのアクセス：at, \[\]
 `std::map`では、キーを指定して値にアクセスするために`at`メンバ関数や`[]`演算子を使用します。
 
 ```cpp
@@ -2022,13 +2026,608 @@ for(
 <img src="manuscript/figs/009.png" width="600"></img></br>
 
 
-# Chapter 3 C++11以降のモダンな新機能
-## 3.1 スマートポインタ
-## 3.2 型推論
-## 3.3 範囲for文
-## 3.4 ラムダ式
-## 3.5 nullptr
-## 3.6 右辺値参照とムーブセマンティクス
+# Chapter 3 C++の落とし穴 With Effective C++
+## 3.1 #defineより、const、enum、inlineを使おう
+本書における2項の主要なテーマは、「プリプロセッサよりコンパイラを使おう」というアドバイスです。これは、具体的にはC++のプリプロセッサ機能、特に#defineディレクティブを使用する代わりに、コンパイラが直接理解し処理できるC++の言語機能を利用することを推奨する項目です。
+
+ソースによると、#defineはC++言語自体の正式な一部としては扱われないのが一般的です。プリプロセッサは、ソースコードがコンパイラによって処理される前に、単なるテキスト置換を行います。この性質が、C++の強力な機能である型システムやスコープ規則と相性が悪く、いくつかの問題を引き起こす可能性があります。
+
+### #defineの使用に伴う主な問題点:
+
+1. **型安全性がない**
+   - #defineによる置換は型情報を持ちません
+   - 例えば、`#define ASPECT_RATIO 1.653`のように数値を定義した場合、プリプロセッサは単にASPECT_RATIOという文字列を1.653に置き換えるだけ
+   - 型に関連するエラーがコンパイル時に検出されず、実行時の予期しない動作につながる可能性があります
+
+   ```cpp
+   // 悪い例
+   #define MAX_ARRAY_SIZE 100
+   int array[MAX_ARRAY_SIZE];  // 型情報なし、単なるテキスト置換
+   
+   // 良い例
+   const int maxArraySize = 100;  // 型情報あり
+   int array[maxArraySize];
+   ```
+
+2. **スコープ規則が適用されない**
+   - #defineはテキスト置換であるため、C++の名前空間やクラスのスコープ規則の対象外です
+   - 一度定義されると、その定義が有効な範囲全体で置換が行われます
+   - 名前の衝突や意図しないマクロ展開を引き起こし、コードの可読性や保守性を損なう可能性があります
+
+   ```cpp
+   // 悪い例
+   #define PI 3.14159
+   namespace Math {
+       double circleArea(double r) {
+           return PI * r * r;  // グローバルスコープ
+       }
+   }
+
+   // 良い例
+   namespace Math {
+       const double pi = 3.14159;  // Math名前空間内
+       double circleArea(double r) {
+           return pi * r * r;
+       }
+   }
+   ```
+
+3. **マクロ関数の副作用と評価順序**
+   - 引数を持つマクロは通常の関数のように見えますが、その実体はテキスト置換です
+   - 引数として副作用のある式（例: ++a）を渡した場合、マクロ展開によってその式が複数回評価される可能性があります
+   - 予期しない結果やバグの原因となります
+
+   ```cpp
+   // 悪い例
+   #define SQUARE(x) ((x) * (x))
+   int a = 5;
+   int result = SQUARE(++a);  // aが2回インクリメントされる!
+
+   // 良い例
+   inline int square(int x) {
+       return x * x;
+   }
+   int a = 5;
+   int result = square(++a);  // aは1回だけインクリメント
+   ```
+
+4. **デバッグの困難さ**
+   - #defineで定義されたマクロ名はコンパイラから見えない可能性があります
+   - デバッガでマクロ名を確認したり、マクロ展開前のコード上でブレークポイントを設定したりすることが困難になる場合があります
+
+### #defineの代替となるC++言語機能:
+
+1. **constの使用**
+   ```cpp
+   // 悪い例
+   #define BUFFER_SIZE 1024
+   #define COMPANY_NAME "TechCorp"
+
+   // 良い例
+   const size_t BufferSize = 1024;
+   const std::string CompanyName = "TechCorp";
+   ```
+
+2. **enumの使用**
+   ```cpp
+   // 悪い例
+   #define RED 0
+   #define GREEN 1
+   #define BLUE 2
+
+   // 良い例
+   enum Color {
+       Red = 0,
+       Green = 1,
+       Blue = 2
+   };
+   ```
+
+3. **inline関数の使用**
+   ```cpp
+   // 悪い例
+   #define MAX(a,b) ((a) > (b) ? (a) : (b))
+
+   // 良い例
+   inline int max(int a, int b) {
+       return a > b ? a : b;
+   }
+   ```
+
+これらのC++言語機能（const, enum, inline）を使用することで、コードは:
+- より型安全になります
+- スコープが明確になります
+- デバッグが容易になります
+- 予期しない副作用のリスクが低減されます
+
+これは、C++が提供するマルチパラダイムの能力を活用し、効率的で堅牢なプログラムを書くための重要な第一歩となります。
+
+### 3.1.1 【実習課題】#defineをconst、enum、inlineに置き換えてみよう
+
+では、実際に#defineをconst、enum、inlineに置き換えてみましょう。
+Sample_03_00を立ち上げてください。
+立ち上がったら、main.cppを開いてください。</br>
+このmain.cppは悪い例として#defineによる定数、関数マクロを多用しています。これをconst、enum、inlineを利用してより良いコードに書き換えてください。
+
+解答例としてmain.after.cppを用意しているので、それを参考にしてもらってもいいです。
+
+
+
+## 3.2 可能ならいつでもconstを使おう
+本書の3項の使える個所ではconstを積極的に使おうというものなのです。3項の内容は全て今でも重要なのですが、ここではその中から「constなメンバ関数」について重点的に解説します。<br/>
+constメンバ関数とは次のコードのように、メンバ関数の宣言にconstを付与することで定義できます。
+[constメンバ関数のサンプル]</br>
+```cpp
+class Player {
+private:
+    int hp;
+public:
+    // これがconstメンバ関数
+    int GetHP() const
+    {
+        return hp;
+    }
+};
+```
+メンバ関数にconstを付けと、コンパイラにこのメンバ関数（この例ではPlayer::GetHP）は内部の状態を変更しないということを教えることができます。
+これはconstな参照、ポインタ、オブジェクトを利用するときに重要になります。
+Effectvie C++の20項で説明されるように（授業でも後々取り上げますが）、関数の仮引数、戻り値にconstな参照やポインタを使うことでプログラムの実行速度を向上させることができます。
+
+これは特に大きなオブジェクトを関数に渡す際に、オブジェクト全体のコピーを避けて参照で渡すという重要なプログラミングの基本テクニックです。
+しかし、このテクニックはconstメンバ関数を使いこなせないと、const参照を利用することができなくなり、非効率で危険なコードを描かざるを得なくなります。
+
+例えば、下記のようにconst参照を利用して効率的な値渡しを行おうしている関数があるとします。
+
+```cpp
+void DrawHP(const Player& hp)
+{
+    std::cout << "プレイヤーのHPは" << player.GetHP() << "です。\n" << 
+}
+```
+しかし、もしも次のコードのようにPlayerクラスのメンバ関数GetHPがconstでない場合、DrawHP関数はコンパイルエラーになります。</br>
+```cpp
+class Player {
+public:
+    int GetHP()
+    {
+        return hp;
+    }
+};
+
+void DrawHP(const Player& hp)
+{
+    // GetHPはconstメンバではないので、内部でhpの値を変更しているかもしれない！
+    // なので呼び出すことができないためコンパイルエラーとなる
+    std::cout << "プレイヤーのHPは" << player.GetHP() << "です。\n" << 
+}
+```
+
+constメンバ関数を使いこなせない場合、DrawHP関数のconstを外すしかなくなります。
+これは、constな参照を利用することができなくなり、非効率で危険なコードを描かざるを得なくなります。
+```cpp
+void DrawHP(Player& player) // コンパイルエラーをなくすためにPlayerからconst性を削除
+{
+    
+    // コンパイルエラーはなくなるが、この関数内でplayerの状態を変えるコードを書くことが可能になってしまった。
+    std::cout << "プレイヤーのHPは" << player.GetHP() << "です。\n" << 
+}
+```
+
+本来DrawHPを作成したプログラマの意図は引数のplayerの状態を変更しないことを明示的に示すことによって、コードの可読性と安全性を高めるという意図があったはずですが、このコードはその意図を破ってしまっています。
+
+このように、constメンバ関数を使いこなせないと、const参照を利用することができなくなり、非効率で危険なコードを書かざるを得なくなります。
+
+### まとめ
+最後に、最初の一歩としてGetter関数は基本的にconstメンバ関数にしておくことをお勧めします。
+
+GetHP、GetPosition、GetRotationなどの関数を多く書いていると思うのですが、まずはそれらの関数をconstメンバにしてください。
+
+### 3.2.1 【実習課題】constメンバ関数を使いこなせるようになろう
+では、実際にconstメンバ関数を使いこなせるようになろう。
+Sample_03_01を立ち上げてください。
+立ち上がったら、main.cppを開いてください。</br>
+このmain.cppはconstなオブジェクトから非constなメンバ関数を呼び出そうとしているため、コンパイルエラーが発生しています。
+これをconstメンバ関数を利用して修正してください。
+解答例としてmain.after.cppを用意しているので、それを参考にしてもらってもいいです。
+
+
+
+## 3.3 オブジェクトは、使う前に初期化しよう
+## 3.4 ポリモーフィズムのための基底クラスには仮想デストラクタを宣言しよう
+## 3.5 コンストラクタやデストラクタ内では決して仮想関数を呼び出さないように
+しよう
+## 3.6 値渡しよりconst参照渡しを使おう
+## 3.7 オブジェクトを戻すべき時に参照を戻そうとしないこと
+## 3.8 データメンバはprivatc宣 言しよう
+## 3.8 インラインをよく理解しよう
+## 3.9 フアイル間のコンパイル依存性をなるべく小さくしよう
+
+
+
+# Chapter 4 C++11以降のモダンな新機能
+
+## 4.1 範囲for文
+C++11で導入された範囲for文（Range-based for loop）は、配列やコンテナの要素を簡潔に走査するための構文です。
+
+### 4.1.1 基本的な使い方
+範囲for文の基本的な構文は以下の通りです：
+
+```cpp
+for (要素の型 変数名 : 配列やコンテナ) {
+    // 処理
+}
+```
+
+例えば、以下のように使用します：
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+// 従来のfor文
+for (size_t i = 0; i < numbers.size(); ++i) {
+    std::cout << numbers[i] << " ";
+}
+
+// 範囲for文
+for (int num : numbers) {
+    std::cout << num << " ";
+}
+```
+
+### 4.1.2 参照を使用した要素の変更
+要素を変更する場合は、参照を使用します：
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+// 各要素を2倍にする
+for (int& num : numbers) {
+    num *= 2;
+}
+```
+
+### 4.1.3 const参照を使用した効率的な読み取り
+大きなオブジェクトの場合、コピーを避けるためにconst参照を使用します：
+
+```cpp
+std::vector<std::string> words = {"Hello", "World"};
+
+// constな参照を使用して効率的に読み取り
+for (const std::string& word : words) {
+    std::cout << word << " ";
+}
+```
+
+### 4.1.4 【ハンズオン】範囲for文を使ってみる
+では、実際に範囲for文を使ってみましょう。Sample_04_01を立ち上げてください。
+立ち上がったら、main.cppを開いてください。</br>
+
+[リスト4.1]</br>
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+std::cout << "Original values:\n";
+for (const int& num : numbers) {
+    std::cout << num << " ";
+}
+std::cout << "\n\nModified values:\n";
+for (int& num : numbers) {
+    num *= 2;
+    std::cout << num << " ";
+}
+std::cout << "\n";
+```
+
+## 4.2 スマートポインタ
+C++11以降では、メモリ管理を安全に行うためのスマートポインタが導入されました。主なスマートポインタには`std::unique_ptr`と`std::shared_ptr`があります。
+
+### 4.2.1 std::unique_ptr
+`std::unique_ptr`は、リソースの排他的な所有権を持つスマートポインタです。
+
+```cpp
+#include <memory>
+
+// unique_ptrの作成
+std::unique_ptr<int> ptr1(new int(42));
+// より安全な方法
+auto ptr2 = std::make_unique<int>(42);  // C++14以降
+
+// 値の取得
+std::cout << *ptr2 << std::endl;  // 42
+
+// 所有権の移動
+auto ptr3 = std::move(ptr2);  // ptr2は無効になる
+```
+
+特徴：
+- コピーできない（ムーブのみ可能）
+- デストラクタで自動的にメモリを解放
+- オーバーヘッドがほとんどない
+
+### 4.2.2 std::shared_ptr
+`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。
+
+```cpp
+#include <memory>
+
+// shared_ptrの作成
+auto ptr1 = std::make_shared<int>(42);
+auto ptr2 = ptr1;  // 参照カウントが2になる
+
+// 値の取得
+std::cout << *ptr1 << " " << *ptr2 << std::endl;  // 42 42
+
+// 参照カウントの確認
+std::cout << ptr1.use_count() << std::endl;  // 2
+
+// ptr2のスコープを抜けると参照カウントが1になる
+// 全てのshared_ptrのスコープを抜けると自動的にメモリが解放される
+```
+
+特徴：
+- 複数のポインタでリソースを共有可能
+- 参照カウントによるメモリ管理
+- 循環参照に注意が必要
+
+### 4.2.3 【ハンズオン】スマートポインタを使ってみる
+では、実際にスマートポインタを使ってみましょう。Sample_04_02を立ち上げてください。
+
+[リスト4.2]</br>
+```cpp
+#include <memory>
+#include <iostream>
+
+class Resource {
+public:
+    Resource(int value) : value_(value) {
+        std::cout << "Resource constructed: " << value_ << std::endl;
+    }
+    ~Resource() {
+        std::cout << "Resource destroyed: " << value_ << std::endl;
+    }
+    int getValue() const { return value_; }
+private:
+    int value_;
+};
+
+int main() {
+    // unique_ptrの使用
+    std::cout << "Testing unique_ptr:\n";
+    {
+        auto ptr = std::make_unique<Resource>(42);
+        std::cout << "Value: " << ptr->getValue() << std::endl;
+    }  // ここでResourceは自動的に解放される
+
+    // shared_ptrの使用
+    std::cout << "\nTesting shared_ptr:\n";
+    {
+        auto ptr1 = std::make_shared<Resource>(100);
+        {
+            auto ptr2 = ptr1;
+            std::cout << "Reference count: " << ptr1.use_count() << std::endl;
+            std::cout << "Value through ptr2: " << ptr2->getValue() << std::endl;
+        }  // ptr2が解放される
+        std::cout << "Reference count after inner scope: " << ptr1.use_count() << std::endl;
+    }  // ptr1が解放され、Resourceも解放される
+}
+```
+
+## 4.3 ラムダ式
+C++11で導入されたラムダ式は、その場で関数オブジェクトを定義できる機能です。
+
+### 4.3.1 基本的な構文
+ラムダ式の基本的な構文は以下の通りです：
+
+```cpp
+[キャプチャ](パラメータ) -> 戻り値の型 { 処理 }
+```
+
+例：
+```cpp
+auto add = [](int a, int b) -> int { return a + b; };
+std::cout << add(3, 4) << std::endl;  // 7
+```
+
+### 4.3.2 キャプチャ
+ラムダ式の外側の変数を使用する場合、キャプチャが必要です：
+
+```cpp
+int multiplier = 10;
+
+// 値キャプチャ
+auto times_value = [multiplier](int x) { return x * multiplier; };
+
+// 参照キャプチャ
+auto times_ref = [&multiplier](int x) { return x * multiplier; };
+
+// 全ての変数を値でキャプチャ
+auto lambda1 = [=](int x) { return x * multiplier; };
+
+// 全ての変数を参照でキャプチャ
+auto lambda2 = [&](int x) { return x * multiplier; };
+```
+
+### 4.3.3 ジェネリックラムダ（C++14以降）
+C++14以降では、`auto`を使用してパラメータの型を推論できます：
+
+```cpp
+auto generic = [](auto x, auto y) { return x + y; };
+std::cout << generic(3, 4) << std::endl;      // int同士の加算
+std::cout << generic(3.14, 2.0) << std::endl; // double同士の加算
+```
+
+### 4.3.4 【ハンズオン】ラムダ式を使ってみる
+では、実際にラムダ式を使ってみましょう。Sample_04_03を立ち上げてください。
+
+[リスト4.3]</br>
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    // 偶数の数を数える
+    int evenCount = std::count_if(numbers.begin(), numbers.end(),
+        [](int n) { return n % 2 == 0; });
+    std::cout << "偶数の数: " << evenCount << std::endl;
+    
+    // 各要素を2倍にする
+    std::for_each(numbers.begin(), numbers.end(),
+        [](int& n) { n *= 2; });
+    
+    // 結果を表示
+    std::cout << "2倍した結果: ";
+    std::for_each(numbers.begin(), numbers.end(),
+        [](int n) { std::cout << n << " "; });
+    std::cout << std::endl;
+    
+    // 値のキャプチャの例
+    int factor = 3;
+    auto multiply = [factor](int n) { return n * factor; };
+    std::cout << "3倍した最初の要素: " << multiply(numbers[0]) << std::endl;
+}
+```
+
+## 4.4 型推論
+C++11以降では、型推論機能が大幅に強化され、コードの可読性と保守性が向上しました。主な型推論の機能として、`auto`キーワードがあります。
+
+### 4.4.1 autoキーワード
+`auto`キーワードを使用すると、初期化式から変数の型を自動的に推論することができます。これにより、長い型名を書く必要がなくなり、コードがより簡潔になります。
+
+```cpp
+// 従来の書き方
+std::vector<int>::iterator it = vec.begin();
+
+// autoを使用した書き方
+auto it = vec.begin();  // std::vector<int>::iteratorと推論される
+```
+
+`auto`は特に以下のような場合に便利です：
+
+1. イテレータの型指定
+```cpp
+for (auto it = container.begin(); it != container.end(); ++it) {
+    // ...
+}
+```
+
+2. ラムダ式の型
+```cpp
+auto lambda = [](int x) { return x * 2; };
+```
+
+3. 複雑な型名の簡略化
+```cpp
+auto result = std::make_shared<std::vector<std::string>>();
+```
+
+ただし、`auto`の使用には以下の注意点があります：
+
+- 必ず初期化が必要です
+- 可読性を損なう可能性がある場合は使用を控えめにする
+- 意図しない型推論を避けるため、戻り値の型が明確でない関数では使用を避ける
+
+### 4.4.2 参照とautoの注意点
+`auto`を使用する際、特に参照型との組み合わせでは注意が必要です。`auto`は参照を外してしまう（参照性を除去する）特徴があります。
+
+#### 参照の除去
+```cpp
+int x = 42;
+int& ref = x;
+auto a = ref;    // aはint型（参照ではない）
+auto& b = ref;   // bはint&型（参照を保持）
+```
+
+#### const修飾子の除去
+```cpp
+const int c = 42;
+auto d = c;      // dはint型（constではない）
+const auto e = c; // eはconst int型（constを保持）
+auto& f = c;     // fはconst int&型（constを保持）
+```
+
+#### コンテナでの注意点
+特にコンテナの要素に対して操作を行う場合、不要なコピーを避けるために参照を使用することが重要です：
+
+```cpp
+std::vector<std::string> strings = {"Hello", "World"};
+
+// Bad: 要素がコピーされる
+for (auto str : strings) {
+    // strはコピーされた値
+    str += "!";  // 元の配列には影響しない
+}
+
+// Good: 参照を使用
+for (auto& str : strings) {
+    // strは参照
+    str += "!";  // 元の配列が修正される
+}
+
+// Good: 読み取り専用の場合はconst参照を使用
+for (const auto& str : strings) {
+    std::cout << str << std::endl;
+}
+```
+
+### 4.4.3 【ハンズオン】型推論を使ってみる
+では、実際に型推論を使ってみましょう。Sample_04_04を立ち上げてください。
+立ち上がったら、main.cppを開いてください。</br>
+
+#### step-1 autoを使用した変数宣言
+main.cppにリスト4.4のプログラムを入力してください。</br>
+[リスト4.4]</br>
+
+```cpp
+// step-1 autoを使用した変数宣言
+auto i = 42;              // int型として推論
+auto d = 3.14;           // double型として推論
+auto s = "Hello";        // const char*として推論
+auto vec = std::vector<int>{1, 2, 3};  // std::vector<int>として推論
+
+std::cout << "i: " << i << " (型: int)\n";
+std::cout << "d: " << d << " (型: double)\n";
+std::cout << "s: " << s << " (型: const char*)\n";
+std::cout << "vec size: " << vec.size() << " (型: std::vector<int>)\n";
+```
+
+#### step-2 参照とautoの使用
+続いて、参照と`auto`の組み合わせを試してみましょう。main.cppにリスト4.5のプログラムを入力してください。</br>
+[リスト4.5]</br>
+
+```cpp
+// step-2 参照とautoの使用
+std::vector<std::string> strings = {"Hello", "World"};
+
+// 値でのループ（コピーが発生）
+std::cout << "\n値でのループ:\n";
+for (auto str : strings) {
+    str += "!";  // 元の配列には影響しない
+    std::cout << str << std::endl;
+}
+
+// 元の配列の内容を確認
+std::cout << "\n元の配列:\n";
+for (const auto& str : strings) {
+    std::cout << str << std::endl;  // "!"が付いていないことを確認
+}
+
+// 参照でのループ（元の配列を修正）
+std::cout << "\n参照でのループ:\n";
+for (auto& str : strings) {
+    str += "!";  // 元の配列が修正される
+    std::cout << str << std::endl;
+}
+```
+
+実行すると、図4.4のように表示されます。</br>
+[図4.4]</br>
+<img src="manuscript/figs/010.png" width="600"></img></br>
+
+## 4.5 nullptr
+## 4.6 右辺値参照とムーブセマンティクス
+
 
 # Chapter 4 カプセル化
 
