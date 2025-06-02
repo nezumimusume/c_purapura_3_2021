@@ -2027,7 +2027,7 @@ for(
 
 
 # Chapter 3 C++の落とし穴 With Effective C++
-## 3.1 #defineより、const、enum、inlineを使おう
+## 3.1 #defineより、const、enum、inlineを使おう（2項）
 本書における2項の主要なテーマは、「プリプロセッサよりコンパイラを使おう」というアドバイスです。これは、具体的にはC++のプリプロセッサ機能、特に#defineディレクティブを使用する代わりに、コンパイラが直接理解し処理できるC++の言語機能を利用することを推奨する項目です。
 
 ソースによると、#defineはC++言語自体の正式な一部としては扱われないのが一般的です。プリプロセッサは、ソースコードがコンパイラによって処理される前に、単なるテキスト置換を行います。この性質が、C++の強力な機能である型システムやスコープ規則と相性が悪く、いくつかの問題を引き起こす可能性があります。
@@ -2153,7 +2153,7 @@ Sample_03_00を立ち上げてください。
 
 
 
-## 3.2 可能ならいつでもconstを使おう
+## 3.2 可能ならいつでもconstを使おう（3項）
 本書の3項の使える個所ではconstを積極的に使おうというものなのです。3項の内容は全て今でも重要なのですが、ここではその中から「constなメンバ関数」について重点的に解説します。<br/>
 constメンバ関数とは次のコードのように、メンバ関数の宣言にconstを付与することで定義できます。
 [constメンバ関数のサンプル]</br>
@@ -2232,7 +2232,207 @@ Sample_03_01を立ち上げてください。
 
 
 
-## 3.3 オブジェクトは、使う前に初期化しよう
+## 3.3 オブジェクトは、使う前に初期化しよう（4項）
+
+# C++11以降のオブジェクト初期化ベストプラクティス
+
+## はじめに
+
+C++11以降では、オブジェクトの初期化がより統一的で安全になりました。この文書では、モダンC++におけるオブジェクト初期化のベストプラクティスを説明します。
+
+## 未初期化の危険性
+
+C++では、未初期化のオブジェクトを使用すると深刻な問題が発生する可能性があります：
+
+```cpp
+// 危険な例：未初期化の変数
+int x;              // 自動変数は自動で初期化されない
+int* ptr;          // 未初期化のポインタ
+std::string* sptr; // 未初期化のポインタ
+
+void dangerous() {
+    std::cout << x;     // 未定義動作: xの値は不定
+    *ptr = 42;          // 未定義動作: 無効なメモリアクセス
+    sptr->length();     // 未定義動作: null/無効なポインタの参照
+}
+
+// 安全な例：C++11の初期化
+int x{};            // ゼロ初期化される
+int* ptr{nullptr};  // nullptrで初期化
+std::string* sptr{nullptr};
+```
+
+未初期化のオブジェクトを使用すると：
+- 不定な値の使用による予期せぬ動作
+- メモリ破壊
+- セグメンテーション違反
+- その他の未定義動作
+などの深刻な問題が発生する可能性があります。
+
+## 1. 統一初期化構文（Uniform Initialization）
+
+C++11で導入された波括弧初期化（brace initialization）を使用することで、あらゆる型の初期化を統一的に行うことができます：
+
+```cpp
+// C++11以前：様々な初期化構文
+int x = 42;                     // コピー初期化
+std::vector<int> vec(10, 20);   // 直接初期化
+std::string str = "hello";      // コピー初期化
+
+// C++11以降：統一的な波括弧初期化
+int x{42};                      // 直接リスト初期化
+std::vector<int> vec{1, 2, 3};  // 直接リスト初期化
+std::string str{"hello"};       // 直接リスト初期化
+
+// 暗黙の型変換による情報損失を防ぐ
+int narrowing{3.14};   // コンパイルエラー：narrowing conversion
+int old = 3.14;        // 警告のみ：情報損失の可能性
+```
+
+## 2. クラスメンバの初期化
+
+### 2.1 コンストラクタでの初期化
+
+C++11以降でも初期化子リストは依然として重要ですが、より良い選択肢が増えました：
+
+```cpp
+class Person {
+private:
+    std::string name;
+    int age;
+    bool employed;
+
+public:
+    // C++11以前：
+    Person(const std::string& n, int a, bool e)
+        : name(n)      // 括弧による初期化
+        , age(a)
+        , employed(e)
+    {}
+
+    // C++11以降：波括弧初期化とmoveセマンティクス
+    Person(std::string n, int a, bool e)
+        : name{std::move(n)}  // 波括弧初期化とmoveによる効率化
+        , age{a}
+        , employed{e}
+    {}
+};
+```
+
+### 2.2 デフォルト初期化とデリゲーティングコンストラクタ
+
+C++11では、以前は不可能だったデリゲーティングコンストラクタとクラス内でのデフォルト値指定が可能になりました：
+
+```cpp
+// C++11以前：
+class Employee {
+private:
+    std::string name;
+    int id;
+    double salary;
+
+public:
+    Employee(const std::string& n, int i, double s) 
+        : name(n), id(i), salary(s) {}
+    
+    // コンストラクタの重複コードが必要
+    Employee(const std::string& n, int i)
+        : name(n), id(i), salary(0.0) {}
+};
+
+// C++11以降：
+class ModernEmployee {
+private:
+    std::string name{""};        // クラス内でデフォルト値を指定可能に
+    int id{0};
+    double salary{0.0};
+
+public:
+    ModernEmployee(std::string n, int i, double s)
+        : name{std::move(n)}, id{i}, salary{s}
+    {}
+
+    // デリゲーティングコンストラクタで重複を削減
+    ModernEmployee(std::string n, int i)
+        : ModernEmployee{std::move(n), i, 0.0}
+    {}
+};
+```
+
+## 3. 静的オブジェクトの初期化
+
+C++11以前と以降で、静的オブジェクトの初期化の保証が大きく変わりました：
+
+```cpp
+// C++11以前：
+class Singleton {
+public:
+    static Singleton& getInstance() {
+        static Singleton instance;  // スレッドセーフが保証されない
+        return instance;
+    }
+private:
+    Singleton() {}
+    // ... 
+};
+
+// C++11以降：
+class ModernSingleton {
+public:
+    static ModernSingleton& getInstance() {
+        static ModernSingleton instance;  // スレッドセーフが保証される
+        return instance;
+    }
+private:
+    ModernSingleton() = default;
+    ModernSingleton(const ModernSingleton&) = delete;
+    ModernSingleton& operator=(const ModernSingleton&) = delete;
+};
+```
+
+C++11以前では：
+- 異なる翻訳単位での静的オブジェクトの初期化順序は未定義
+- マルチスレッド環境での静的ローカル変数の初期化は安全でない
+
+C++11以降では：
+- 静的ローカル変数の初期化は自動的にスレッドセーフ
+- 複数スレッドが同時にアクセスしても、初期化は1回だけ行われることが保証される
+
+## 4. スマートポインタの初期化
+
+C++11以前は生ポインタの管理が必要でしたが、現代のC++ではスマートポインタを使用することで、メモリ管理が安全になります：
+
+```cpp
+// C++11以前：
+class Resource {
+    Resource* ptr = new Resource();  // メモリリーク・例外安全でない
+    // deleteを忘れる可能性
+};
+
+// C++11以降：
+class ModernResource {
+    auto ptr = std::make_unique<Resource>();  // 自動的にメモリ管理
+    auto shared = std::make_shared<Resource>();  // 参照カウント方式
+};
+```
+
+## まとめ
+
+C++11以降の初期化の特徴と改善点：
+1. 波括弧初期化による統一的な構文と型安全性の向上
+2. クラス内でのメンバ変数のデフォルト値指定（以前は不可能）
+3. デリゲーティングコンストラクタによるコード重複の削減（新機能）
+4. スレッドセーフな静的初期化の保証（以前は未保証）
+5. スマートポインタによる安全なメモリ管理（標準ライブラリの改善）
+
+これらの機能を活用することで、C++11以前と比べて：
+- 初期化忘れによる未定義動作を防ぐ
+- より安全で保守性の高いコードを書ける
+- マルチスレッド環境での安全性が向上
+- メモリ管理の自動化による信頼性の向上
+
+が実現できます。 
+
 ## 3.4 ポリモーフィズムのための基底クラスには仮想デストラクタを宣言しよう
 ## 3.5 コンストラクタやデストラクタ内では決して仮想関数を呼び出さないように
 しよう
