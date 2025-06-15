@@ -1,0 +1,86 @@
+#include <iostream>
+#include <Windows.h>
+#include <string>
+#include <array>
+
+// モデルクラスのスタブ（このクラスは今回の実習には関係ないので無視してよい）
+class Model 
+{
+    int m_dummy;
+public:
+    Model(const std::string& filePath) {}
+};
+
+// エネミークラスの基底クラス
+class EnemyBase {
+private:
+    Model* m_model = nullptr;
+public:
+    EnemyBase(const std::string& filePath) :
+        m_model(new Model(filePath))
+    {
+    }
+    virtual ~EnemyBase()
+    {
+        std::cout << "EnemyBaseのデストラクタが呼ばれた\n";
+        delete m_model;
+    }
+};
+
+// 地上にいる敵
+class EnemyGround : public EnemyBase {
+public:
+    EnemyGround(const std::string& filePath) :
+        EnemyBase(filePath)
+    {
+    }
+    ~EnemyGround()
+    {
+        std::cout << "EnemyGroundのデストラクタが呼ばれた\n";
+    }
+};
+// 空にいる敵
+class EnemyAir : public EnemyBase {
+public:
+    EnemyAir(const std::string& filePath) :
+        EnemyBase(filePath)
+    {
+    }
+    ~EnemyAir()
+    {
+        std::cout << "EnemyAirのデストラクタが呼ばれた\n";
+    }
+};
+
+// 水中にいる敵
+class EnemyWater : public EnemyBase {
+public:
+    EnemyWater(const std::string& filePath) :
+        EnemyBase(filePath)
+    {
+    }
+    ~EnemyWater()
+    {
+        std::cout << "EnemyWaterデストラクタが呼ばれた\n";
+    }
+};
+
+int main()
+{
+    SetConsoleOutputCP(CP_UTF8);
+
+    // 敵を生成
+    std::array<EnemyBase*, 4> enemies = {
+        new EnemyGround("Enemy_01.fbx"),
+        new EnemyGround("Enemy_02.fbx"),
+        new EnemyAir("Enemy_03.fbx"),
+        new EnemyWater("Enemy_04.fbx"),
+    };
+    // 敵を削除
+    for (EnemyBase* enemy : enemies)
+    {
+        // 派生クラスと基底クラス(EnemyBase)のデストラクタが呼ばれることを期待しているが呼ばれない
+        delete enemy;
+    }
+    return 0;
+}
