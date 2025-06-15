@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Windows.h>
 #include <string>
 
 class Player {
@@ -34,7 +35,7 @@ public:
 // プレイヤーの状態を表示する関数（constな参照を使用）
 void DisplayPlayerStatus(const Player& player) {
     // コンパイルエラー: constなPlayerオブジェクトにconstでないメンバ関数は呼び出せない
-    std::cout << "名前: " << player.GetName() << "\n";
+    std::cout << "名前: " << player.Get5Name() << "\n";
     std::cout << "HP: " << player.GetHP() << "\n";
     std::cout << "攻撃力: " << player.GetAttack() << "\n";
 }
@@ -53,6 +54,8 @@ void SimulateBattle(const Player& attacker, Player& defender) {
 }
 
 int main() {
+    SetConsoleOutputCP(CP_UTF8);
+
     Player hero("勇者", 100, 15);
     Player enemy("スライム", 50, 5);
 
