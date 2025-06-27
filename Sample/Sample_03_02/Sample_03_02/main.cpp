@@ -3,39 +3,28 @@
 #include <string>
 
 
-class IGameObject {
+// 継承することを前提とする基底クラス。
+class GameObject {
 private:
-    std::string m_name;
+	std::string m_name;	// オブジェクトの名前を保持している。
 public:
-    IGameObject(std::string name)
-    {
-        m_name = name;
-    }
+	// 引数付きのコンストラクタだけがある状態
+	// -> かならず名前を指定してコンストラクトしてね
+	GameObject(std::string name)
+	{
+	}
 };
-class Player : public IGameObject {
-private:
-    int m_hp;
+
+class Player : public GameObject{
 public:
-    Player()
-    {
-        m_hp = 0;
-    }
-    Player(int hp, std::string name)
-    {
-        m_hp = hp;
-    }
-};
-class Game{
-private:
-    Player m_player;
-public:
-    Game()
-    {
-        m_player = Player(100, "プレイヤー");
-    }
+	Player(const std::string& name) : GameObject(name)
+	{
+	}
 };
 int main()
 {
-   // ゲームをコンストラクト
-   Game game;
+	Player pl_A("プレイヤーA");
+	Player pl_B("プレイヤーB");
+	Player pl_C("プレイヤーC");
+	Player pl_D("プレイヤーD");
 }

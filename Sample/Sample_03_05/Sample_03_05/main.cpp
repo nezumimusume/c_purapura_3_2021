@@ -1,0 +1,48 @@
+#include <iostream>
+#include <Windows.h>
+#include <string>
+
+// ダミーのモデルクラス
+class Model {
+private:
+    std::string m_name;
+public:
+    void SetName(std::string name)
+    {
+        m_name = name;
+    }
+    std::string GetName() const
+    {
+        return m_name;
+    }
+};
+
+// プレイヤークラス
+class Player {
+private:
+    Model m_model;
+public:
+    void SetModel(Model model)
+    {
+        m_model = model;
+    }
+    Model GetModel() const
+    {
+        return m_model;
+    }
+    void DrawModelName() const
+    {
+        std::cout << m_model.GetName() << std::endl;
+    }
+};
+
+int main() {
+    SetConsoleOutputCP(CP_UTF8);
+    
+    Player player;
+    Model model;
+    model.SetName("テストモデル");
+    player.SetModel(model);
+    player.DrawModelName();
+    return 0;
+} 
