@@ -2897,7 +2897,7 @@ Vector3& GetZeroVector()
     zeroVector.y = 0.0f;
     zeroVector.z = 0.0f;
     // ローカル変数の実体を返している！
-    return Player;
+    return zeroVector;
 }
 
 int main()
