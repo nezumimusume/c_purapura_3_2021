@@ -1,8 +1,8 @@
 #pragma once
 #include "Vector3.h"
+#include <iostream>
 
 class Enemy;
-
 class Player
 {
 private:
@@ -23,10 +23,10 @@ public:
 	{
 		return m_position;
 	}
-	void AttackToEnemy(Enemy* enemy);
+	void AttackToEnemy(Enemy& enemy);
 	void TakeDamage(int damage)
 	{
-		m_hp = std::max(0, m_hp - damage);
+		m_hp = std::max<int>(0, m_hp - damage);
 	}
 };
 

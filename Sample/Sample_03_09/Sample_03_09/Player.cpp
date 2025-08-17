@@ -2,7 +2,18 @@
 #include "Player.h"
 #include "Enemy.h"
 
-
+int Player::GetHp() const
+{
+	return m_hp;
+}
+int Player::GetMp() const
+{
+	return m_mp;
+}
+const Vector3& Player::GetPosition() const
+{
+	return m_position;
+}
 void Player::AttackToEnemy(Enemy* enemy)
 {
 	if (enemy != nullptr
@@ -14,4 +25,7 @@ void Player::AttackToEnemy(Enemy* enemy)
 		}
 	}
 }
-
+void Player::TakeDamage(int damage)
+{
+	m_hp = std::max<int>(0, m_hp - damage);
+}
