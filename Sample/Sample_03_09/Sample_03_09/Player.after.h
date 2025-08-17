@@ -26,7 +26,7 @@ public:
 	void AttackToEnemy(Enemy* enemy);
 	void TakeDamage(int damage)
 	{
-		m_hp = std::max(0, m_hp - damage);
+		m_hp = std::max<int>(0, m_hp - damage);
 	}
 };
 
