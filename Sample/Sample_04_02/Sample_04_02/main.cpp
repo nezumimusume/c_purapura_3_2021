@@ -1,6 +1,6 @@
 #include <iostream>
 #include <Windows.h>
-#include <vector>
+#include <memory>
 
 class Player {
 private:
