@@ -231,10 +231,13 @@
     - [4.1.1 基本的な使い方](#411-基本的な使い方)
     - [4.1.2 参照を使用した要素の変更](#412-参照を使用した要素の変更)
     - [4.1.3 const参照を使用した効率的な読み取り](#413-const参照を使用した効率的な読み取り)
-    - [4.1.4 【ハンズオン】範囲for文を使ってみる](#414-ハンズオン範囲for文を使ってみる)
+    - [4.1.4 【実習課題】範囲for文を使ってみる](#414-実習課題範囲for文を使ってみる)
   - [4.2 スマートポインタ](#42-スマートポインタ)
+    - [4.2.1 メモリ管理](#421-メモリ管理)
     - [4.2.1 std::unique\_ptr](#421-stdunique_ptr)
-    - [4.2.2 std::shared\_ptr](#422-stdshared_ptr)
+      - [排他的な所有権](#排他的な所有権)
+    - [4.2.2 【実習課題】std::unique\_ptrを使ってみる](#422-実習課題stdunique_ptrを使ってみる)
+    - [4.2.3 std::shared\_ptr`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。](#423-stdshared_ptrstdshared_ptrはリソースの共有所有権を持つスマートポインタです)
     - [4.2.3 【ハンズオン】スマートポインタを使ってみる](#423-ハンズオンスマートポインタを使ってみる)
   - [4.3 ラムダ式](#43-ラムダ式)
     - [4.3.1 基本的な構文](#431-基本的な構文)
@@ -3443,53 +3446,122 @@ for (const std::string& word : words) {
 }
 ```
 
-### 4.1.4 【ハンズオン】範囲for文を使ってみる
+### 4.1.4 【実習課題】範囲for文を使ってみる
 では、実際に範囲for文を使ってみましょう。Sample_04_01を立ち上げてください。
-立ち上がったら、main.cppを開いてください。</br>
+Sample_04_01は範囲for文を利用していないコードです。このコードを範囲for文を利用したコードに修正してください。
 
-[リスト4.1]</br>
-```cpp
-std::vector<int> numbers = {1, 2, 3, 4, 5};
-std::cout << "Original values:\n";
-for (const int& num : numbers) {
-    std::cout << num << " ";
-}
-std::cout << "\n\nModified values:\n";
-for (int& num : numbers) {
-    num *= 2;
-    std::cout << num << " ";
-}
-std::cout << "\n";
-```
 
 ## 4.2 スマートポインタ
 C++11以降では、メモリ管理を安全に行うためのスマートポインタが導入されました。主なスマートポインタには`std::unique_ptr`と`std::shared_ptr`があります。
 
-### 4.2.1 std::unique_ptr
-`std::unique_ptr`は、リソースの排他的な所有権を持つスマートポインタです。
+### 4.2.1 メモリ管理
+C++はメモリ管理を自分で行う必要があります。例えば、メモリを動的に管理したい場合はnew/deleteを利用します。
+newとdeleteは必ずペアになっている必要があります。不要になったメモリは正しくdeleteで解放を行う必要があります。
+
+例えば、次のようなコードの場合はGameクラスはPlayerクラスのメモリを解放する必要があります。
 
 ```cpp
-#include <memory>
-
-// unique_ptrの作成
-std::unique_ptr<int> ptr1(new int(42));
-// より安全な方法
-auto ptr2 = std::make_unique<int>(42);  // C++14以降
-
-// 値の取得
-std::cout << *ptr2 << std::endl;  // 42
-
-// 所有権の移動
-auto ptr3 = std::move(ptr2);  // ptr2は無効になる
+class Game{
+    Player* m_player;
+public:
+    Game(){
+        // new演算子を利用してPlayerクラスのインスタンスを生成する
+        m_player = new Player();
+    }
+    ~Game(){
+        // delete演算子を利用してPlayerクラスのインスタンスを破棄する
+        delete m_player;
+    }
+}
 ```
 
-特徴：
-- コピーできない（ムーブのみ可能）
-- デストラクタで自動的にメモリを解放
-- オーバーヘッドがほとんどない
+また、次のようなコードも正しくメモリを解放する必要があります。
 
-### 4.2.2 std::shared_ptr
-`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。
+```cpp
+void Update()
+{
+    int* value = new int(10);
+
+    std::cout << *value << std::endl;
+
+    // 不要になったメモリをdeleteで解放する
+    delete value;
+}
+```
+
+しかし、このようなメモリ管理は、deleteのし忘れや、例外を投げられるといったケースで容易にメモリリークを引き起こします。
+そこで、C++11以降ではメモリ管理を自動的に行ってくれるスマートポインタが導入されました。
+
+
+
+### 4.2.1 std::unique_ptr
+`std::unique_ptr`は、メモリの排他的な所有権を持つスマートポインタです。また、所有しているメモリが不要になったら自動的に破棄してくれます。
+例えば、次のように利用します。
+
+```cpp
+class Game{
+    std::unique_ptr<Player> m_player;
+public:
+    Game(){
+        // unique_ptrのメモリ確保はmake_uniqueを利用するのがベストプラクティス
+        m_player = std::make_unique<Player>();
+    }
+    ~Game(){
+        // 不要になったメモリは自動的に破棄されるので何も書かなくてよい
+    }
+}
+```
+
+std::unique_ptrを利用した際のメモリアクセス速度は、生ポインタを利用した場合と同等になるため、パフォーマンス的なデメリットは存在しません。そのためスマートポインタを利用する場合は多くの場合で、std::unique_ptrを利用するのがベストプラクティスです。
+
+#### 排他的な所有権
+std::unique_ptrは排他的な所有権を持つスマートポインタです。排他的というのは、1つのメモリを複数のunique_ptrで管理することはできないということです。
+例えば次のようなコードはコンパイルエラーになります。
+
+```cpp
+void Update()
+{
+    std::unique_ptr<int> value0 = std::make_unique<int>();
+    *value0 = 10;
+    std::unique_ptr<int> value1 = value0; // コンパイルエラー
+    *value1 = 20;
+}
+```
+
+このような処理を行いたい場合は、生ポインタにアクセスするか所有権の移動を行うかの２択になります。
+
+[生ポインタを利用する場合]
+```cpp
+void Update()
+{
+    std::unique_ptr<int> value0 = std::make_unique<int>();
+    *value0 = 10;
+    int* value1 = value0.get(); // コンパイルエラー
+    *value1 = 20;
+}
+```
+
+[所有権の移動を行う場合]
+```cpp
+void Update()
+{
+    std::unique_ptr<int> value0 = std::make_unique<int>();
+    *value0 = 10;
+    std::unique_ptr<int> value1 = std::move(value0); // 所有権の移動
+    *value1 = 20;
+    // 所有権を移動しているため、ここでnullアクセスが発生するので注意
+    *value0 = 30;
+}
+```
+所有権の移動を行った場合は、value0はnullになっているため、nullアクセスが発生することに注意が必要です。unique_ptrは排他的な所有権を持っているため、複数のunique_ptrで同じメモリを管理することはできません。
+
+
+### 4.2.2 【実習課題】std::unique_ptrを使ってみる
+
+Sample_04_02は、生ポインタを利用しているコードです。これをstd::unique_ptrを利用したコードに修正してください。
+
+
+### 4.2.3 std::shared_ptr`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。
 
 ```cpp
 #include <memory>
