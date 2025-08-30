@@ -6,6 +6,10 @@ class Player {
 private:
     int m_hp = 100;
 public:
+    ~Player()
+    {
+        std::cout << "Playerのデストラクタが呼ばれた" << std::endl;
+    }
     int GetHP() const
     {
         return m_hp;
@@ -19,6 +23,10 @@ class Enemy {
 private:
     int m_hp = 20;
 public:
+    ~Enemy()
+    {
+        std::cout << "Enemyのデストラクタが呼ばれた" << std::endl;
+    }
     int GetHP() const
     {
         return m_hp;
@@ -35,6 +43,10 @@ public:
     PlayerUI(Player* player) :
         m_player(player) {
     }
+    ~PlayerUI()
+    {
+        std::cout << "PlayerUIのデストラクタが呼ばれた" << std::endl;
+    }
     void Draw()
     {
         std::cout << "プレイヤーのHPは:" << m_player->GetHP() << "です。\n";
@@ -48,6 +60,10 @@ public:
     EnemyUI(Enemy* enemy) :
         m_enemy(enemy) 
     {
+    }
+    ~EnemyUI()
+    {
+        std::cout << "EnemyUIのデストラクタが呼ばれた" << std::endl;
     }
     void Draw()
     {
