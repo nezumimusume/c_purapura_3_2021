@@ -237,8 +237,10 @@
     - [4.2.1 std::unique\_ptr](#421-stdunique_ptr)
       - [排他的な所有権](#排他的な所有権)
     - [4.2.2 【実習課題】std::unique\_ptrを使ってみる](#422-実習課題stdunique_ptrを使ってみる)
-    - [4.2.3 std::shared\_ptr`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。](#423-stdshared_ptrstdshared_ptrはリソースの共有所有権を持つスマートポインタです)
-    - [4.2.3 【ハンズオン】スマートポインタを使ってみる](#423-ハンズオンスマートポインタを使ってみる)
+    - [4.2.3 std::shared\_ptr\`](#423-stdshared_ptr)
+    - [4.2.4 shared\_ptrの寿命](#424-shared_ptrの寿命)
+    - [4.2.5 参照カウンタ](#425-参照カウンタ)
+    - [4.2.6 共有管理の難しさ](#426-共有管理の難しさ)
   - [4.3 ラムダ式](#43-ラムダ式)
     - [4.3.1 基本的な構文](#431-基本的な構文)
     - [4.3.2 キャプチャ](#432-キャプチャ)
@@ -3561,23 +3563,190 @@ void Update()
 Sample_04_02は、生ポインタを利用しているコードです。これをstd::unique_ptrを利用したコードに修正してください。
 
 
-### 4.2.3 std::shared_ptr`std::shared_ptr`は、リソースの共有所有権を持つスマートポインタです。
+### 4.2.3 std::shared_ptr`
+
+std::shared_ptr`はメモリの共有所有権を持つスマートポインタです。
+前節みた、std::unique_ptrは排他的なリソース所有権をもつスマートポインタだったため、複数のスマートポインタでメモリを管理することができませんでしたが、`std::shared_ptr`は複数のスマートポインタでメモリを管理することができます。
+
+つまり、下記のようなコードが書けるということです。
 
 ```cpp
-#include <memory>
+void Update()
+{
+    // shared_ptrではmake_sharedを利用するのがベストプラクティス
+    std::shared_ptr<int> value0 = std::make_shared<int>();
+    *value0 = 10;
+    std::shared_ptr<int> value1 = value0; // 所有権を共有できる
+    *value1 = 20;
+    // 二つとも同じ
+    std::cout << *value0 << std::endl;
+    std::cout << *value1 << std::endl;
+}
+```
 
-// shared_ptrの作成
-auto ptr1 = std::make_shared<int>(42);
-auto ptr2 = ptr1;  // 参照カウントが2になる
+### 4.2.4 shared_ptrの寿命
+さて、`std::shared_ptr`に管理されているメモリはどのようなタイミングで解放されるのでしょうか？`std::unique_ptr`はそれ自体が破棄されれば、メモリを解放すればよかったのですが、`std::shared_ptr`はそこまで単純な話ではありません。
 
-// 値の取得
-std::cout << *ptr1 << " " << *ptr2 << std::endl;  // 42 42
+例えば、次のようなケースを考えてください。
 
-// 参照カウントの確認
-std::cout << ptr1.use_count() << std::endl;  // 2
+```cpp
+int main()
+{
+    std::shared_ptr<int> value0 = std::make_shared<int>();
+    *value0 = 10;
+    if(/*何かしらの条件*/){
+        //value1はこのスコープで定義されている
+        std::shared_ptr<int> value1 = value0;
+        *value1 = 20;
+    } // ここでvalue1の寿命は終わる
+    
+    // どうなる？？？
+    std::cout << *value0 << std::endl;
+    return 0;
+}
+```
 
-// ptr2のスコープを抜けると参照カウントが1になる
-// 全てのshared_ptrのスコープを抜けると自動的にメモリが解放される
+このコードはint型のメモリをvalue0とvalue1で共有しています。しかしvalue1はif文のスコープで定義されているため、if文のスコープを抜けると寿命が終了します。さて、この時value1で管理されているメモリはどうなるのでしょうか？結論をいうとこのコードは何の問題もありません。確保されたメモリは、共有しているshared_ptrの数が0になった時に解放されます。これを実現している仕組みが参照カウンタというものです。
+
+### 4.2.5 参照カウンタ
+`std::shared_ptr`は内部に参照カウンタを持っています。参照カウンタは管理しているメモリが共有されているshared_ptrの数を表します。例えば、先ほどのコードであれば、参照カウンタはコメントのようになります。
+
+```cpp
+int main()
+{
+    std::shared_ptr<int> value0 = std::make_shared<int>(); // メモリが確保される。参照カウンタは１
+    *value0 = 10;
+    if(/*何かしらの条件*/){
+        //value1はこのスコープで定義されている
+        std::shared_ptr<int> value1 = value0; // メモリが共有されるので参照カウンタは2になる（value0とvalue1が共有している）
+        *value1 = 20;
+    } // ここでvalue1の寿命は終わるので、参照カウンタは1になる
+    
+    // どうなる？？？
+    std::cout << *value0 << std::endl;
+    return 0;
+} // ここでvalue0の寿命は終わるので、参照カウンタは0になる。そのためメモリが解放される。
+```
+このような動作になります。つまり、std::shared_ptrによって管理されているメモリは、管理されているshared_ptrの全て不要になると自動的に解放されます。
+
+### 4.2.6 共有管理の難しさ
+さて、`std::unique_ptr`と`std::shared_ptr`でどちらの方が扱いやすいと感じたでしょうか？人によって感じ方は異なると思いますが、unique_ptrと比べると、メモリを共有するためのコードはシンプルだし、危険な生ポインタにアクセスする必要もないし（少なくなる）、unique_ptrより扱いやすいと感じた人もいるかもしれません。しかし、基本的にstd:shared_ptrは扱いに注意が必要な機能で、その注意点を理解していないとメモリリークを引き起こす可能性があります。
+
+あるあるとネタとしては、ゲームを遊んでいる間ずっと常駐しているオブジェクトが参照を握っているため、メモリが解放されないなどです。
+例
+えば、ApplicationManagerのようなゲーム起動中ずっと存在しているインスタンスがあったとして、そのクラスがshared_ptrでPlayerのメモリを握っていると、ゲームをクリアしてタイトル画面に戻ってもPlayerのメモリが解放されないという問題が起きます。
+また、分かりにくい例として循環参照というものもあります。循環参照は、二つのオブジェクトが互いに参照を握っているため、メモリが解放されないという問題です。
+例えば次のようなコードがあったとします。
+
+```cpp
+class Enemy;
+
+class Player{
+private:
+    std::shared_ptr<Enemy> m_enemy;
+public:
+    void SetEnemy(std::shared_ptr<Enemy> enemy) 
+    { 
+        m_enemy = enemy; 
+    }
+};
+
+class Enemy{
+private:
+    std::shared_ptr<Player> m_player;
+public:
+    void SetPlayer(std::shared_ptr<Player> player) 
+    { 
+        m_player = player; 
+    }
+
+};
+
+class Game{
+private:
+    std::shared_ptr<Player> m_player;
+    std::shared_ptr<Enemy> m_enemy;
+public:
+    Game()
+    {
+        m_player = std::make_shared<Player>(); // Playerの参照カウンタが１になる
+        m_enemy = std::make_shared<Enemy>();
+        // これが循環参照。
+        m_player->SetEnemy(m_enemy);
+        m_enemy->SetPlayer(m_player);
+    }
+    ~Game()
+    {
+
+    }
+}
+
+int main()
+{
+    Game game;
+    while(/*ゲームが終了するまでループ*/){
+
+    }
+    return 0;
+} // ここでGameの寿命が終わるのでデストラクタが呼ばれる。
+```
+
+このコードの参照カウンタの動きを考えてみましょう。
+```cpp
+class Enemy;
+
+class Player{
+private:
+    std::shared_ptr<Enemy> m_enemy;
+public:
+    void SetEnemy(std::shared_ptr<Enemy> enemy) 
+    { 
+        m_enemy = enemy; 
+    }
+};
+
+class Enemy{
+private:
+    std::shared_ptr<Player> m_player;
+public:
+    void SetPlayer(std::shared_ptr<Player> player) 
+    { 
+        m_player = player; 
+    }
+
+};
+
+class Game{
+private:
+    std::shared_ptr<Player> m_player;
+    std::shared_ptr<Enemy> m_enemy;
+public:
+    Game()
+    {
+        m_player = std::make_shared<Player>(); // Playerの参照カウンタが１になる
+        m_enemy = std::make_shared<Enemy>(); // Enemyの参照カウンタが１になる
+        // これが循環参照。
+        m_player->SetEnemy(m_enemy); // Enemyの参照カウンタが2になる
+        m_enemy->SetPlayer(m_player); // Playerの参照カウンタが2になる
+    }
+    ~Game()
+    {
+        // ここでm_playerとm_enemyが死ぬが参照カウンタは１になる
+        // 0にならないためメモリが解放されない。
+    }
+}
+
+int main()
+{
+    Game game;
+    while(/*ゲームが終了するまでループ*/){
+
+    }
+    return 0;
+} // ここでGameの寿命が終わるのでデストラクタが呼ばれる。
+```
+
+
 ```
 
 特徴：
