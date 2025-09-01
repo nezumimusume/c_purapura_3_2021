@@ -242,7 +242,7 @@
     - [4.2.5 参照カウンタ](#425-参照カウンタ)
     - [4.2.6 共有管理の難しさ](#426-共有管理の難しさ)
     - [4.2.8 std::weak\_ptr](#428-stdweak_ptr)
-    - [4.2.7 【ハンズオン】shared\_ptrを使ってみる](#427-ハンズオンshared_ptrを使ってみる)
+    - [4.2.7 【実習課題】](#427-実習課題)
   - [4.3 型推論](#43-型推論)
     - [4.4.1 autoキーワード](#441-autoキーワード)
     - [4.4.2 参照とautoの注意点](#442-参照とautoの注意点)
@@ -3750,48 +3750,8 @@ std::weak_ptrを利用することで、先ほどの循環参照などの問題�
 
 また、std::weak_ptrは監視しているメモリが有効かどうかを確認することができます。
 
-### 4.2.7 【ハンズオン】shared_ptrを使ってみる
-では、実際にスマートポインタを使ってみましょう。Sample_04_02を立ち上げてください。
-
-[リスト4.2]</br>
-```cpp
-#include <memory>
-#include <iostream>
-
-class Resource {
-public:
-    Resource(int value) : value_(value) {
-        std::cout << "Resource constructed: " << value_ << std::endl;
-    }
-    ~Resource() {
-        std::cout << "Resource destroyed: " << value_ << std::endl;
-    }
-    int getValue() const { return value_; }
-private:
-    int value_;
-};
-
-int main() {
-    // unique_ptrの使用
-    std::cout << "Testing unique_ptr:\n";
-    {
-        auto ptr = std::make_unique<Resource>(42);
-        std::cout << "Value: " << ptr->getValue() << std::endl;
-    }  // ここでResourceは自動的に解放される
-
-    // shared_ptrの使用
-    std::cout << "\nTesting shared_ptr:\n";
-    {
-        auto ptr1 = std::make_shared<Resource>(100);
-        {
-            auto ptr2 = ptr1;
-            std::cout << "Reference count: " << ptr1.use_count() << std::endl;
-            std::cout << "Value through ptr2: " << ptr2->getValue() << std::endl;
-        }  // ptr2が解放される
-        std::cout << "Reference count after inner scope: " << ptr1.use_count() << std::endl;
-    }  // ptr1が解放され、Resourceも解放される
-}
-```
+### 4.2.7 【実習課題】
+では、実際にスマートポインタを使ってみましょう。Sample_04_03を立ち上げてください。
 
 
 ## 4.3 型推論
