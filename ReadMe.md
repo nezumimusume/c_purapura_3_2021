@@ -237,16 +237,13 @@
     - [4.2.1 std::unique\_ptr](#421-stdunique_ptr)
       - [排他的な所有権](#排他的な所有権)
     - [4.2.2 【実習課題】std::unique\_ptrを使ってみる](#422-実習課題stdunique_ptrを使ってみる)
-    - [4.2.3 std::shared\_ptr\`](#423-stdshared_ptr)
+    - [4.2.3 std::shared\_ptr](#423-stdshared_ptr)
     - [4.2.4 shared\_ptrの寿命](#424-shared_ptrの寿命)
     - [4.2.5 参照カウンタ](#425-参照カウンタ)
     - [4.2.6 共有管理の難しさ](#426-共有管理の難しさ)
-  - [4.3 ラムダ式](#43-ラムダ式)
-    - [4.3.1 基本的な構文](#431-基本的な構文)
-    - [4.3.2 キャプチャ](#432-キャプチャ)
-    - [4.3.3 ジェネリックラムダ（C++14以降）](#433-ジェネリックラムダc14以降)
-    - [4.3.4 【ハンズオン】ラムダ式を使ってみる](#434-ハンズオンラムダ式を使ってみる)
-  - [4.4 型推論](#44-型推論)
+    - [4.2.8 std::weak\_ptr](#428-stdweak_ptr)
+    - [4.2.7 【ハンズオン】shared\_ptrを使ってみる](#427-ハンズオンshared_ptrを使ってみる)
+  - [4.3 型推論](#43-型推論)
     - [4.4.1 autoキーワード](#441-autoキーワード)
     - [4.4.2 参照とautoの注意点](#442-参照とautoの注意点)
       - [参照の除去](#参照の除去)
@@ -255,8 +252,6 @@
     - [4.4.3 【ハンズオン】型推論を使ってみる](#443-ハンズオン型推論を使ってみる)
       - [step-1 autoを使用した変数宣言](#step-1-autoを使用した変数宣言)
       - [step-2 参照とautoの使用](#step-2-参照とautoの使用)
-  - [4.5 nullptr](#45-nullptr)
-  - [4.6 右辺値参照とムーブセマンティクス](#46-右辺値参照とムーブセマンティクス)
 
 # Chapter 0 デバッガの利用
 大規模なC++の開発において、デバッガの利用は欠かせません。</br>
@@ -3454,7 +3449,7 @@ Sample_04_01は範囲for文を利用していないコードです。このコ�
 
 
 ## 4.2 スマートポインタ
-C++11以降では、メモリ管理を安全に行うためのスマートポインタが導入されました。主なスマートポインタには`std::unique_ptr`と`std::shared_ptr`、`std::weak_ptr`があります。
+C++11以降では、メモリ管理を安全に行うためのスマートポインタが導入されました。主なスマートポインタには`std::unique_ptr`と`std::shared_ptr`があります。
 
 ### 4.2.1 メモリ管理
 C++はメモリ管理を自分で行う必要があります。例えば、メモリを動的に管理したい場合はnew/deleteを利用します。
@@ -3563,9 +3558,9 @@ void Update()
 Sample_04_02は、生ポインタを利用しているコードです。これをstd::unique_ptrを利用したコードに修正してください。
 
 
-### 4.2.3 std::shared_ptr`
+### 4.2.3 std::shared_ptr
 
-std::shared_ptr`はメモリの共有所有権を持つスマートポインタです。
+`std::shared_ptr`はメモリの共有所有権を持つスマートポインタです。
 前節みた、std::unique_ptrは排他的なリソース所有権をもつスマートポインタだったため、複数のスマートポインタでメモリを管理することができませんでしたが、`std::shared_ptr`は複数のスマートポインタでメモリを管理することができます。
 
 つまり、下記のようなコードが書けるということです。
@@ -3669,7 +3664,7 @@ private:
 public:
     Game()
     {
-        m_player = std::make_shared<Player>(); // Playerの参照カウンタが１になる
+        m_player = std::make_shared<Player>(); 
         m_enemy = std::make_shared<Enemy>();
         // これが循環参照。
         m_player->SetEnemy(m_enemy);
@@ -3746,15 +3741,16 @@ int main()
 } // ここでGameの寿命が終わるのでデストラクタが呼ばれる。
 ```
 
+また、shared_ptrは参照カウンタの操作というオーバーヘッドがあるため、パフォーマンス面でもunique_ptrより劣ります。
+このような理由から、基本的んはメモリの所有者が明確に分かるunique_ptrの仕様を最初に検討することをオススメします。
 
-```
+### 4.2.8 std::weak_ptr
+最後に紹介だけにとどめますが、`std::weak_ptr`は`std::shared_ptr`の弱参照を行えるスマートポインタです。weak_ptrはshared_ptrが管理しているメモリに対しての所有権は保持せず、管理されているリソースをのぞき見、監視するためのスマートポインタです。
+std::weak_ptrを利用することで、先ほどの循環参照などの問題を解決することができます。
 
-特徴：
-- 複数のポインタでリソースを共有可能
-- 参照カウントによるメモリ管理
-- 循環参照に注意が必要
+また、std::weak_ptrは監視しているメモリが有効かどうかを確認することができます。
 
-### 4.2.3 【ハンズオン】スマートポインタを使ってみる
+### 4.2.7 【ハンズオン】shared_ptrを使ってみる
 では、実際にスマートポインタを使ってみましょう。Sample_04_02を立ち上げてください。
 
 [リスト4.2]</br>
@@ -3797,85 +3793,8 @@ int main() {
 }
 ```
 
-## 4.3 ラムダ式
-C++11で導入されたラムダ式は、その場で関数オブジェクトを定義できる機能です。
 
-### 4.3.1 基本的な構文
-ラムダ式の基本的な構文は以下の通りです：
-
-```cpp
-[キャプチャ](パラメータ) -> 戻り値の型 { 処理 }
-```
-
-例：
-```cpp
-auto add = [](int a, int b) -> int { return a + b; };
-std::cout << add(3, 4) << std::endl;  // 7
-```
-
-### 4.3.2 キャプチャ
-ラムダ式の外側の変数を使用する場合、キャプチャが必要です：
-
-```cpp
-int multiplier = 10;
-
-// 値キャプチャ
-auto times_value = [multiplier](int x) { return x * multiplier; };
-
-// 参照キャプチャ
-auto times_ref = [&multiplier](int x) { return x * multiplier; };
-
-// 全ての変数を値でキャプチャ
-auto lambda1 = [=](int x) { return x * multiplier; };
-
-// 全ての変数を参照でキャプチャ
-auto lambda2 = [&](int x) { return x * multiplier; };
-```
-
-### 4.3.3 ジェネリックラムダ（C++14以降）
-C++14以降では、`auto`を使用してパラメータの型を推論できます：
-
-```cpp
-auto generic = [](auto x, auto y) { return x + y; };
-std::cout << generic(3, 4) << std::endl;      // int同士の加算
-std::cout << generic(3.14, 2.0) << std::endl; // double同士の加算
-```
-
-### 4.3.4 【ハンズオン】ラムダ式を使ってみる
-では、実際にラムダ式を使ってみましょう。Sample_04_03を立ち上げてください。
-
-[リスト4.3]</br>
-```cpp
-#include <iostream>
-#include <vector>
-#include <algorithm>
-
-int main() {
-    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    
-    // 偶数の数を数える
-    int evenCount = std::count_if(numbers.begin(), numbers.end(),
-        [](int n) { return n % 2 == 0; });
-    std::cout << "偶数の数: " << evenCount << std::endl;
-    
-    // 各要素を2倍にする
-    std::for_each(numbers.begin(), numbers.end(),
-        [](int& n) { n *= 2; });
-    
-    // 結果を表示
-    std::cout << "2倍した結果: ";
-    std::for_each(numbers.begin(), numbers.end(),
-        [](int n) { std::cout << n << " "; });
-    std::cout << std::endl;
-    
-    // 値のキャプチャの例
-    int factor = 3;
-    auto multiply = [factor](int n) { return n * factor; };
-    std::cout << "3倍した最初の要素: " << multiply(numbers[0]) << std::endl;
-}
-```
-
-## 4.4 型推論
+## 4.3 型推論
 C++11以降では、型推論機能が大幅に強化され、コードの可読性と保守性が向上しました。主な型推論の機能として、`auto`キーワードがあります。
 
 ### 4.4.1 autoキーワード
@@ -3898,12 +3817,8 @@ for (auto it = container.begin(); it != container.end(); ++it) {
 }
 ```
 
-2. ラムダ式の型
-```cpp
-auto lambda = [](int x) { return x * 2; };
-```
 
-3. 複雑な型名の簡略化
+1. 複雑な型名の簡略化
 ```cpp
 auto result = std::make_shared<std::vector<std::string>>();
 ```
@@ -4011,8 +3926,6 @@ for (auto& str : strings) {
 [図4.4]</br>
 <img src="manuscript/figs/010.png" width="600"></img></br>
 
-## 4.5 nullptr
-## 4.6 右辺値参照とムーブセマンティクス
 
 
 
